@@ -1,11 +1,13 @@
-package com.marcosvors.gestores_crud.resource;
+package com.marcosvors.gestores_crud.resources;
 
 import com.marcosvors.gestores_crud.entities.Gestor;
 import com.marcosvors.gestores_crud.services.GestorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -30,7 +32,11 @@ public class GestorResource {
     @PostMapping
     public ResponseEntity<Gestor> inserir(@RequestBody Gestor obj) {
         obj = service.inserir(obj);
-        return ResponseEntity.ok().body(obj);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(obj.getId())
+                .toUri();
+        return ResponseEntity.created(uri).body(obj);
     }
 
     @DeleteMapping(value = "/{id}")
