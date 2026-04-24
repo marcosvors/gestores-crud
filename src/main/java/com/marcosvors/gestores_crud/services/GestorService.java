@@ -2,7 +2,11 @@ package com.marcosvors.gestores_crud.services;
 
 import com.marcosvors.gestores_crud.entities.Gestor;
 import com.marcosvors.gestores_crud.repositories.GestorRepository;
+import com.marcosvors.gestores_crud.services.exceptions.DatabaseException;
+import com.marcosvors.gestores_crud.services.exceptions.ResourceNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +23,7 @@ public class GestorService {
 
     public Gestor findById(Long id) {
         Optional<Gestor> obj = repository.findById(id);
-        return obj.get();
+        return obj.orElseThrow(() -> new ResourceNotFoundException(id));
     }
 
     public Gestor inserir(Gestor obj) {
@@ -27,16 +31,27 @@ public class GestorService {
     }
 
     public void deletar(Long id) {
-        repository.deleteById(id);
+        try {
+            if (!repository.existsById(id)) {
+                throw new ResourceNotFoundException(id);
+            }
+            repository.deleteById(id);
+        } catch (DataIntegrityViolationException e) {
+            throw new DatabaseException(e.getMessage());
+        }
     }
 
     public Gestor atualizar(Long id, Gestor obj) {
-        Gestor entity = repository.getReferenceById(id);
-        updateData(entity, obj);
-        return repository.save(entity);
+        try {
+            Gestor entity = repository.getReferenceById(id);
+            atualizarDados(entity, obj);
+            return repository.save(entity);
+        } catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException(id); // → 404 ✅
+        }
     }
 
-    private void updateData(Gestor entity, Gestor obj) {
+    private void atualizarDados(Gestor entity, Gestor obj) {
         entity.setNome(obj.getNome());
         entity.setEmail(obj.getEmail());
     }
